@@ -51,12 +51,46 @@ app.post('/chat', function(req,res){
     } else {
 	if(/ = /.test(req.body.msg)){
 	    const [ cle, valeur ] = req.body.msg.split(" = ")
-	    fs.writeFileSync('reponses.json', JSON.stringify({ [cle]: valeur}))
+	    //Version Synchrone
+        //fs.writeFileSync('reponses.json', JSON.stringify({ [cle]: valeur}))
+
+        //Version async
+        readValuesFromFile((err, valeursExistantes) => {
+        if (err) {
+          res.send('error while reading réponses.json', err)
+        } else {
+          const data = JSON.stringify({
+            ...valeursExistantes,
+            [cle]: valeur
+          });
+          fs.writeFile('réponses.json', data, (err) => {
+            console.log('appel au callback de writefile')
+            if (err) {
+              console.error('error while saving réponses.json', err)
+              res.send('Il y a eu une erreur lors de l\'enregistrement')
+            } else {
+              res.send('Merci pour cette information !')
+            }
+          });
+          console.log('appel à writefile effectué')
+        }
+      })
+
+
 	} else {
         const cle = req.body.msg
-        const reponses = fs.readFileSync('réponses.json', { encoding: 'utf8' })
+        /*const reponses = fs.readFileSync('réponses.json', { encoding: 'utf8' })
         const reponse = JSON.parse(reponses)[cle]
-        res.send(cle + ': ' + reponse)
+        res.send(cle + ': ' + reponse)*/
+
+        readValuesFromFile((err, values) => {
+            if (err) {
+                res.send('error while reading réponses.json', err)
+            } else {
+                const reponse = values[cle]
+                res.send(cle + ': ' + reponse)
+            }
+        })
 	    
 	}
 	res.send(req.body.msg)
@@ -66,4 +100,15 @@ app.post('/chat', function(req,res){
 app.listen(PORT, function () {
     console.log('Example app listening on port 3000!')
 })
+
+function readValuesFromFile(callback) {
+    fs.readFile('réponses.json', { encoding: 'utf8' }, (err, reponses) => {
+        if (err) {
+            callback(err);
+        } else {
+            const valeursExistantes = JSON.parse(reponses);
+            callback(null, valeursExistantes);
+        }
+    });
+}
 
