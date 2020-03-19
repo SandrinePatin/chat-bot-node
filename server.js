@@ -5,7 +5,7 @@ const MongoClient = require('mongodb').MongoClient;
 
 const PORT = process.env.PORT || 3000;
 const DATABASE_NAME = "chat-bot";
-const uri = `mongodb+srv://yunie:san0999@cluster0-jp6gm.azure.mongodb.net/test?retryWrites=true&w=majority`;
+const MONGODB_URI = `mongodb+srv://yunie:san0999@cluster0-jp6gm.azure.mongodb.net/test?retryWrites=true&w=majority`;
 
 const readFile = util.promisify(fs.readFile);
 const writeFile = util.promisify(fs.writeFile);
@@ -29,6 +29,14 @@ app.get('/hello', function(req, res) {
     } else {
         res.send("Bonjour, "+req.query.nom+"!")
     }
+});
+
+app.delete('/messages/last', async function (req, res) {
+    const lastTwoDocuments = await collection.find({}).sort({ _id: -1 }).limit(2).toArray()
+    const [ botReply, userMsg ] = lastTwoDocuments
+    await collection.deleteOne(userMsg)
+    await collection.deleteOne(botReply)
+    res.send('ok')
 })
 
 app.post('/chat', async function(req,res){
@@ -47,7 +55,6 @@ app.post('/chat', async function(req,res){
     } else {
         if(/ = /.test(req.body.msg)){
             const [ cle, valeur ] = req.body.msg.split(" = ");
-            //Version async
             let valeursExistantes;
             try {
                 valeursExistantes = await readValuesFromFile();
@@ -79,18 +86,14 @@ app.post('/chat', async function(req,res){
     }
 });
 
-app.get('/messages/all', function(req, res) {
-    client.connect(async err => {
-        const messages = client.db("chat-bot").collection("messages");
-        const message = await messages.find({}).toArray();
-        console.log(message);
-        res.send(message);
-    });
+app.get('/messages/all', async function(req, res) {
+       const messages = await collection.find({}).toArray();
+       res.send(messages);
 });
 
 ;(async () => {
     console.log(`Connecting to ${DATABASE_NAME}...`);
-    const client = new MongoClient(uri, { useNewUrlParser: true });
+    const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
     await client.connect()
     collection = client.db(DATABASE_NAME).collection("messages");
     console.log(`Successfully connected to ${DATABASE_NAME}`);
