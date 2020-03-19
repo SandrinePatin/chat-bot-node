@@ -6,7 +6,7 @@ const PASSWORD = process.env.MONGODB_PASSWORD
 
 const assert = require('assert');
 const MongoClient = require('mongodb').MongoClient;
-const uri = `mongodb+srv://yunie:<mdp>@cluster0-jp6gm.azure.mongodb.net/test?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://yunie:san0999@cluster0-jp6gm.azure.mongodb.net/test?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true });
 client.connect(async err => {
     const collection = client.db("test").collection("dates");
